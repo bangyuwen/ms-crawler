@@ -5,7 +5,7 @@ let store1m = []
 let store3m = []
 let store = {}
 
-let fetch = () => {
+let fetch = (callback) => {
   request('http://monnsutogatya.com/', (error, response, body) => {
     let $ = cheerio.load(body)
     $('div#tab_1m tr td span').each(function(i, elem) {
@@ -25,9 +25,8 @@ let fetch = () => {
         probability: parseFloat(store3m[2])/100 || 0
       }
     }
-    console.log(store)
+    callback(store)
   })
 }
 
-fetch()
-setInterval(fetch, 30000)
+module.exports = fetch
