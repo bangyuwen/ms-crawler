@@ -24,5 +24,6 @@ setInterval(()=>{
         console.log('success')
       })
     })
+    store = []
   }
 }, 30000)

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <title></title>
+    <style>
+    body {
+      background-color: #efefef;
+    }
+    svg {
+      display: block;
+      margin: 0 auto;
+      position: absolute;
+      top: 50vh;
+      left: 50vw;
+      transform: translate(-50%, -50%);
+      background-color: #fff;
+    }
+    svg circle {
+      position: relative;
+      z-index: 10;
+    }
+    .line {
+      fill: none;
+      stroke: steelblue;
+      stroke-width: 2px;
+    }
+    #tooltip {
+    			position: absolute;
+    			top: 0;
+    			left: 0;
+          width: 150px;
+          height: 35px;
+    			z-index: 10;
+    			margin: 0;
+    			padding: 15px;
+    			color: white;
+    			font-family: sans-serif;
+    			font-size: 12px;
+    			font-weight: bold;
+    			text-align: left;
+    			background-color: rgba(0, 0, 0, 0.75);
+    			opacity: 0;
+    			pointer-events: none;
+    }
+
+    </style>
+  </head>
+  <body>
+    <script type="text/javascript">
+      console.log('hi');
+      d3.text("/static/data.txt", function(data) {
+        let w = 5000
+        let h = 640
+        let p = 100
+        let svg = d3.select('body')
+                     .append('svg')
+                     .attr('width', w)
+                     .attr('height', h)
+        data = JSON.parse(data)
+        let parseTime = d3.isoParse
+        let formateTime = d3.timeFormat("%I:%M:%S %p")
+        let dataParsed = data.map(d => {
+          return {
+            time: parseTime(d.date),
+            probability: d.oneMin.probability
+          }
+        })
+        let xScale = d3.scaleTime()
+                       .domain([dataParsed[0].time, dataParsed[dataParsed.length-1].time])
+                       .range([p, w - p])
+
+        let yScale = d3.scaleLinear()
+                       .domain([0, d3.max(dataParsed, (d, i) => d.probability)])
+                       .range([h - p, p])
+
+       let valueline = d3.line()
+                         .x((d, i) => xScale(d.time))
+                         .y((d, i) => yScale(d.probability))
+
+       svg.append('path')
+               .attr('class', 'line')
+               .datum(dataParsed)
+               .attr('d', valueline)
+       svg.append('g')
+           .attr('transform', `translate(0, ${h - p})`)
+           .call(d3.axisBottom(xScale))
+       svg.append('g')
+           .attr('transform', `translate(${p}, 0)`)
+           .call(d3.axisLeft(yScale))
+
+      // append tooltip
+      let tooltip = d3.select('body')
+                      .append('div')
+                      .attr('id', 'tooltip')
+
+      // append dot
+      svg.selectAll('dot')
+              .data(dataParsed)
+              .enter()
+              .append('circle')
+              .attr('r', 3)
+              .attr('cx', (d, i) => xScale(d.time))
+              .attr('cy', (d, i) => yScale(d.probability))
+              .style('fill', 'steelblue')
+              .on('mouseover', function(d, i) {
+                 console.log(d3.select(this))
+                 d3.select(this).attr('r', 7)
+                                .attr('stroke-width', 4)
+                                .style('stroke', 'red')
+                                .style('z-index', 11)
+                 let x = d3.event.pageX
+                 let y = d3.event.pageY
+                 tooltip.style('left', x - 190 + 'px')
+                        .style('top', y - 75 + 'px')
+                        .style('opacity', 1)
+                        .html(`probability: ${d.probability} <br />Time: ${formateTime(d.time)}`)
+                 console.log(tooltip)
+              })
+              .on('mouseout', function(d, i) {
+                d3.select(this).attr('r', 3)
+                               .attr('stroke-width', 0)
+                               .style('stroke', 'steelblue')
+                tooltip.style('opacity', 0)
+              })
+      });
+
+    </script>
+  </body>
+</html>
